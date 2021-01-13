@@ -65,7 +65,7 @@ const config = {
     //create the ground group, a group of static objects
     let ground = this.physics.add.staticGroup();
 
-    //create a pipe group, these are static objects, even they move across the screen, they are an unstoppable force, not effected by gravity.
+    //create a pipe group, these are dynamic objects that are an unstoppable force, not effected by gravity.
     totalPipes = Math.floor((width +40*scaleX)/550)
      bottomPipes = this.physics.add.group({
           immovable: true,
