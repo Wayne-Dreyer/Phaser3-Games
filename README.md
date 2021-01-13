@@ -14,10 +14,17 @@ Each game can be easily run by starting a basic web server in the **www** folder
 
 This is the basic Phaser 3 game Tutorial **Making your first Phaser 3 game**, available at [Phaser.io](https://phaser.io/tutorials/making-your-first-phaser-3-game)  
 
+![alt text](https://github.com/Wayne-Dreyer/Phaser3-Games/blob/main/PhaserTutorial.JPG?raw=true)
+
 # PhaserTutorialFullScreenMod
 
 As the name implies, this is the same  **Making your first Phaser 3 game**, available at [Phaser.io](https://phaser.io/tutorials/making-your-first-phaser-3-game), but I have modified the game to run in full screen mode on 16:9 monitors. 
 
+![alt text](https://github.com/Wayne-Dreyer/Phaser3-Games/blob/main/PhaserTutorialFullScreenMod.JPG?raw=true)
+
 # Flappy-Bird
 
-This is a work in progress, but will be a remake of the iconic Flappy bird mobile game.
+This is a remake of the iconic flappy bird game, made with Phaser 3 and made to run in full screen.
+Everything is working except the scoring, which is a work in progress.
+
+![alt text](https://github.com/Wayne-Dreyer/Phaser3-Games/blob/main/FlappyBird.gif?raw=true)
