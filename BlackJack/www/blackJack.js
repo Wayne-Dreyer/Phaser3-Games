@@ -40,6 +40,7 @@ const config = {
 const game = new Phaser.Game(config);
 
 // The game variables
+let createThis;
 let alreadyPicked = [];
 let chips = 200;
 let cardArray = [
@@ -63,6 +64,20 @@ let playersCardLocation2 = new Phaser.Math.Vector2();
 let playersCard1;
 let playersCard2;
 let onTable = 0;
+let playersTotal = 0;
+let playerHasAce = 0;
+let cardsDelt = 0;
+
+let playersHitCards = []
+let playersHitCardLocations = [
+    new Phaser.Math.Vector2(), 
+    new Phaser.Math.Vector2(), 
+    new Phaser.Math.Vector2(), 
+    new Phaser.Math.Vector2(),
+    new Phaser.Math.Vector2(),
+    new Phaser.Math.Vector2(),
+    new Phaser.Math.Vector2(),
+]; // Probability of you hitting more than 7 times is very very low, an average card value under 3 is needed.
 
 // The dealers cards
 let dealersCardLocation = new Phaser.Math.Vector2();
@@ -70,6 +85,25 @@ let dealersCardLocation2 = new Phaser.Math.Vector2();
 let hiddenCard;
 let dealersCard1;
 let dealersCard2;
+let dealersTotal = 0;
+let dealerHasAce = 0;
+
+let dealersHitCards = []
+let dealersHitCardLocations = [
+    new Phaser.Math.Vector2(), 
+    new Phaser.Math.Vector2(), 
+    new Phaser.Math.Vector2(), 
+    new Phaser.Math.Vector2(),
+    new Phaser.Math.Vector2(),
+    new Phaser.Math.Vector2(),
+    new Phaser.Math.Vector2(),
+]; // Probability of you hitting more than 7 times is very very low, an average card value under 3 is needed.
+
+// The buttons
+let hit;
+let stand;
+// Ensure Hit cannot be pressed after stand has already been pressed.
+let stood = false;
 
 // loading in the assets we will use
 function preload() {
@@ -143,52 +177,181 @@ function preload() {
     // Face Down Card
     this.load.image("FaceDown", "assets/cards/blue_back.png");
 
+    this.load.image("stand", "assets/button_stand.png");
+    this.load.image("hit", "assets/button_hit.png");
+
   }
 
 // creation of objects and rendering of initial objects
 function create() {
-    let background = this.add.image(width/2, height/2 - scaleY*50, "background");
+    // initialize values for hit card locations
+    playersHitCardLocations[0].y = height -110*scale;
+    playersHitCardLocations[0].x = width/2-100*scale;
+
+    playersHitCardLocations[1].y = height - 110*scale;
+    playersHitCardLocations[1].x = playersHitCardLocations[0].x + 40*scale;
+
+    playersHitCardLocations[2].y = height - 110*scale;
+    playersHitCardLocations[2].x = playersHitCardLocations[1].x + 40*scale;
+
+    playersHitCardLocations[3].y = height - 110*scale;
+    playersHitCardLocations[3].x = playersHitCardLocations[2].x + 40*scale;
+
+    playersHitCardLocations[4].y = height - 110*scale;
+    playersHitCardLocations[4].x = playersHitCardLocations[3].x + 40*scale;
+
+    playersHitCardLocations[5].y = height - 110*scale;
+    playersHitCardLocations[5].x = width/2-100*scale;
+
+    playersHitCardLocations[6].y = height - 110*scale;
+    playersHitCardLocations[6].x = width/2-100*scale;
+
+    // now dealers hit cards
+    // initialize values for hit card locations
+    dealersHitCardLocations[0].y = height -270*scale;
+    dealersHitCardLocations[0].x = width/2-100*scale;
+
+    dealersHitCardLocations[1].y = height - 270*scale;
+    dealersHitCardLocations[1].x = dealersHitCardLocations[0].x + 40*scale;
+
+    dealersHitCardLocations[2].y = height - 270*scale;
+    dealersHitCardLocations[2].x = dealersHitCardLocations[1].x + 40*scale;
+
+    dealersHitCardLocations[3].y = height - 270*scale;
+    dealersHitCardLocations[3].x = dealersHitCardLocations[2].x + 40*scale;
+
+    dealersHitCardLocations[4].y = height - 270*scale;
+    dealersHitCardLocations[4].x = dealersHitCardLocations[3].x + 40*scale;
+
+    dealersHitCardLocations[5].y = height - 270*scale;
+    dealersHitCardLocations[5].x = width/2-100*scale;
+
+    dealersHitCardLocations[6].y = height - 270*scale;
+    dealersHitCardLocations[6].x = width/2-100*scale;
+
+
+    let background = this.add.image(width/2, height/2, "background");
    
     background.setScale(scale*0.5).setScrollFactor(0);
+
+    hit = this.add.sprite(width - 60*scale, height - 30*scale, "hit").setScale(scale*0.5).setInteractive();
+    stand = this.add.sprite(60*scale, height - 30*scale, "stand").setScale(scale*0.5).setInteractive();
 
     // deal a random card to the player
     playersCardLocation.y = height;
     playersCardLocation.x = width/2-100*scale;
-    playersCard1 = displayCard(drawCard(alreadyPicked), this);
+    playersCard1 = displayCard(drawCard(alreadyPicked), this, "player");
     this.physics.moveToObject(playersCard1, playersCardLocation, 9000);
     onTable ++;
 
     // deal the dealer a facedown card
-    dealersCardLocation.y = height/2 - 100*scale;
+    dealersCardLocation.y = 105*scale;
     dealersCardLocation.x = width/2-100*scale;
     hiddenCard= this.physics.add.image(width + scale*50 , 0 - scale*50, "FaceDown").setOrigin(0,1).setScale(cardScale); //the facedown card we actually show
     this.physics.moveToObject(hiddenCard, dealersCardLocation, 9000);
-    dealersCard1 = displayCard(drawCard(alreadyPicked), this); //the dealers card but kept hidden off screen
+    dealersCard1 = displayCard(drawCard(alreadyPicked), this, "dealer"); //the dealers card but kept hidden off screen
 
     // deal a second random card to the player
     playersCardLocation2.y = height;
     playersCardLocation2.x = playersCardLocation.x + 70*scale;
-    playersCard2 = displayCard(drawCard(alreadyPicked), this);
+    playersCard2 = displayCard(drawCard(alreadyPicked), this, "player");
     this.physics.moveToObject(playersCard2, playersCardLocation2, 9000);
     onTable ++;
 
     // deal a second random card to the dealer
-    dealersCardLocation2.y = height/2 -100*scale;
+    dealersCardLocation2.y = 105*scale;
     dealersCardLocation2.x = playersCardLocation.x + 70*scale;
-    dealersCard2 = displayCard(drawCard(alreadyPicked), this);
+    dealersCard2 = displayCard(drawCard(alreadyPicked), this, "dealer");
     this.physics.moveToObject(dealersCard2, dealersCardLocation2, 9000);
     onTable ++;
     
-   
+    console.log(playersTotal);
+    console.log("Player has : " + playerHasAce + " Aces");
+
+    createThis = this;
+    // Handling clicking of hit button
+    hit.on('pointerdown', function (pointer) {
+
+        this.setTint(0x3178eb);
+
+    });
+
+    hit.on("pointerout", function (pointer) {
+        this.clearTint();
+    });
+
+    // This is where the button functionality will be called, this ensures it runs once and you can cancel a click by dragging off button
+    hit.on("pointerup", function (pointer) {
+        this.clearTint();
+        if(checkBustPlayer() == false && stood == false)
+        {
+        playersHitCards.push(displayCard(drawCard(alreadyPicked), createThis , "player"));
+        //createThis.physics.moveToObject(playersHitCards[playersHitCards.length - 1], playersHitCardLocations[playersHitCards.length - 1], 900); //This won't work for some reason
+        playersHitCards[playersHitCards.length -1].setX(playersHitCardLocations[playersHitCards.length - 1].x).setY(playersHitCardLocations[playersHitCards.length - 1].y);
+        checkBustPlayer();
+        }
+        
+        console.log(playersTotal);
+        scoreText.setText("score: " + playersTotal);
+        if(playerHasAce)
+        {
+            scoreText.setText("score: " + playersTotal + "/" + (playersTotal-10));
+        }
+        console.log("Player has : " + playerHasAce + " Aces");
+    });
+
+    //Handling Clicking of Stand button
+    stand.on('pointerdown', function (pointer) {
+
+        this.setTint(0x3178eb);
+
+    });
+
+    stand.on("pointerout", function (pointer) {
+        this.clearTint();
+    });
+
+    // This is where the button functionality will be called, this ensures it runs once and you can cancel a click by dragging off button
+    stand.on("pointerup", function (pointer) {
+        this.clearTint();
+        dealersCard1.setX(dealersCardLocation.x).setY(dealersCardLocation.y);
+        stood = true;
+        dealerHit();
+        whoWon();
+        console.log("pointer released");
+    });
+
+    //adding a score
+    scoreText = this.add.text(width - 100*scale, height - 80*scale, "score: 0", {
+        fontSize: "38px",
+        fontStyle: "bold",
+        fill: "#000",
+      });
+
+      scoreText.setText("score: " + playersTotal );
+      if(playerHasAce)
+      {
+        scoreText.setText("score: " + playersTotal + "/" + (playersTotal-10));
+      }
 }
 
 // The actual game loop, where any updates are made/events are handled.
 function update() {
 
+    
+    // stopping the 4 cards that are always dealt, maybe I should change this to not run once these have been stopped, for better efficiency.
+    if(cardsDelt < 30 )
+    {
     stopObject(playersCard1, playersCardLocation);
     stopObject(hiddenCard, dealersCardLocation);
     stopObject(playersCard2, playersCardLocation2);
     stopObject(dealersCard2, dealersCardLocation2);
+    }
+
+    // making sure we stop each new card thats added if the player decides to Hit
+    playersHitCards.forEach((card, index) => {
+        stopObject(card, playersHitCardLocations[index]);
+    });
     
 }
 
@@ -200,19 +363,66 @@ function drawCard(alreadyPicked){
 	{
 		card = drawCard(alreadyPicked);
     }
-    alreadyPicked.push(card); // add the card to the array so its probability of being drawn again is reduced.
+    //alreadyPicked.push(card); // add the card to the array so its probability of being drawn again is reduced.
 	return card;
 }
 
 // Takes in number between 1 and 208 (inclusive) and draws a corresponding card.
-function displayCard(number, table) {
+function displayCard(number, table, who) {
     let cardNumber = Math.ceil(number/4);
     let card =  table.physics.add.image(width + scale*50 , 0 - scale*50, cardArray[cardNumber-1]).setOrigin(0,1).setScale(cardScale);
-    return card;  
+    let cardValue;
+    alreadyPicked.push(number); // add the card to the array so its probability of being drawn again is reduced.
+    switch(Math.ceil(cardNumber/4)){
+        case 1:
+            cardValue = 11;
+            break;
+        case 2:
+            cardValue = 2;
+            break;
+        case 3:
+            cardValue = 3;
+            break;
+        case 4:
+            cardValue = 4;
+            break;
+        case 5:
+            cardValue = 5;
+            break;
+        case 6:
+            cardValue = 6;
+            break;
+        case 7:
+            cardValue = 7;
+            break;
+        case 8:
+            cardValue = 8;
+            break;
+        case 9:
+            cardValue = 9;
+            break;
+        default:
+            cardValue = 10;
+    } 
+    if(who == "dealer")
+    {
+        dealersTotal = dealersTotal + cardValue;
+        if(cardValue == 11){
+            dealerHasAce = dealerHasAce + 1;
+        }
+    }else 
+    {
+        playersTotal = playersTotal + cardValue;
+        if(cardValue == 11){
+            playerHasAce = playerHasAce + 1;
+        }
+    }
+    return card;
 }
 
 function stopObject(theObject, location)
 {
+    // console.log(theObject);
     let hasStopped = false;
     let distance = Phaser.Math.Distance.Between(theObject.x, theObject.y, location.x, location.y);
         if (playersCard1.body.speed > 0)
@@ -222,9 +432,50 @@ function stopObject(theObject, location)
             if (distance < 160)
             {
                 theObject.body.reset(location.x, location.y);
-                hasStopped =true
+                cardsDelt ++;
             }
         }
+}
+
+function checkBustPlayer()
+{
+    if(playersTotal > 21 && playerHasAce < 1)
+    {
+        youLose();
+        return true;
+    }else if(playersTotal > 21 && playerHasAce > 0)
+    {
+        playersTotal = playersTotal - 10;
+        playerHasAce = playerHasAce - 1;
+        return false;
+    }else{
+        return false;
+    }
+}
+
+function dealerIsBust()
+{
+    if(dealersTotal > 21 && dealerHasAce < 1)
+    {
+        return true;
+    }else if(dealersTotal > 21 && dealerHasAce > 0)
+    {
+        dealersTotal = dealersTotal - 10;
+        dealerHasAce = dealerHasAce - 1;
+        dealerHit();
+        return false;
+    }else{
+        return false;
+    }
+}
+
+function youLose()
+{
+    createThis.add.text(width/2, height/2, "YOU LOSE!", {
+        fontSize: "58px",
+        fontStyle: "bold",
+        fill: "#000",
+      });;
 }
 
 //temp sleep function ****TO be removed if not used ****
@@ -235,3 +486,44 @@ function sleep(milliseconds) {
       currentDate = Date.now();
     } while (currentDate - date < milliseconds);
   }
+
+function dealerHit()
+{
+    while(dealersTotal < 17)
+        {
+            dealersHitCards.push(displayCard(drawCard(alreadyPicked), createThis , "dealer"));
+        }
+        dealersHitCards.forEach((card, index) => {
+            card.setX(dealersHitCardLocations[index].x).setY(dealersHitCardLocations[index].y);
+        });
+        whoWon();
+}
+
+function whoWon()
+{
+    if(dealersTotal < playersTotal)
+        {
+            createThis.add.text(width/2, height/2, "YOU WIN!", {
+                fontSize: "58px",
+                fontStyle: "bold",
+                fill: "#000",
+              });;
+        }else if(dealersTotal > playersTotal && dealersTotal < 22)
+        {
+            youLose();
+        }else if(dealersTotal == playersTotal)
+        {
+            createThis.add.text(width/2, height/2, "DRAW!", {
+                fontSize: "58px",
+                fontStyle: "bold",
+                fill: "#000",
+              });;
+        }else if(dealerIsBust())
+        {
+            createThis.add.text(width/2, height/2, "YOU WIN!", {
+                fontSize: "58px",
+                fontStyle: "bold",
+                fill: "#000",
+              });;
+        }
+}
